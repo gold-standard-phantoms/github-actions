@@ -1,0 +1,85 @@
+name: Test Workflow
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        description: "The version of Python to use for testing and linting"
+        type: string
+        required: false
+        default: "3.9"
+
+      ruff_version:
+        description: "Version of Ruff to use"
+        type: string
+        required: false
+        default: "latest"
+
+      use_dvc:
+        description: "Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets."
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  lint:
+    name: Lint Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.1.0
+        with:
+          python_version: ${{ inputs.python_version }}
+          UV_INDEX: "https://gsp-archive:${{ secrets.PRIVATE_PYPI_PASSWORD }}@pypiserver.gsplabs.com/ https://pypi.org/simple"
+          install_deps: "true"
+          install_dev_deps: "true"
+
+      - uses: gold-standard-phantoms/github-actions/.github/actions/lint@v0.1.0
+        with:
+          python_target_version: ${{ inputs.python_version }}
+          ruff_version: ${{ inputs.ruff_version }}
+  commit_check:
+    name: Check Commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: gold-standard-phantoms/github-actions/.github/actions/commit-check@v0.1.0
+
+  test:
+    name: Run Tests
+    needs: [lint, commit_check]
+    runs-on: ubuntu-latest
+    if: |
+      needs.lint.result == 'success' && 
+      needs.commit_check.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        env:
+          PRIVATE_PYPI_PASSWORD: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
+        run: |
+          if [ -z "$PRIVATE_PYPI_PASSWORD" ]; then
+            echo "Error: PRIVATE_PYPI_PASSWORD secret is not set!"
+            exit 1
+          fi
+
+      - name: Set up DVC
+        uses: iterative/setup-dvc@v1
+        if: ${{ inputs.use_dvc }}
+        
+      - name: Pull DVC data
+        run: dvc pull
+        if: ${{ inputs.use_dvc }}
+        env:  
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+
+      - name: Setup and Run Tests
+        uses: gold-standard-phantoms/github-actions/.github/actions/setup-and-test@v0.1.0
+        with:
+          UV_INDEX: "https://gsp-archive:${{ secrets.PRIVATE_PYPI_PASSWORD }}@pypiserver.gsplabs.com/ https://pypi.org/simple"

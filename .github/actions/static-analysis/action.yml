@@ -1,0 +1,34 @@
+name: "Static Analysis Checks"
+description: "Runs MyPy static type checking"
+
+inputs:
+  UV_INDEX:
+    description: "The URL(s) for the Python package index, including any authentication"
+    required: false
+    default: "https://pypi.org/simple"
+    type: string
+
+  python_version:
+    description: "Python version to use for static analysis"
+    required: false
+    default: "3.11"
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.1.0
+      with:
+        UV_INDEX: ${{ inputs.UV_INDEX }}
+        python_version: ${{ inputs.python_version }}
+        install_deps: "true"
+        install_dev_deps: "true"
+
+    - name: Install MyPy
+      shell: bash
+      run: uv tool install mypy
+
+    - name: Run MyPy
+      shell: bash
+      run: uv run mypy src
+

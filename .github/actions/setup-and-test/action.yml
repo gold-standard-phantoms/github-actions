@@ -1,0 +1,28 @@
+name: "Setup and Run Tests"
+description: "Sets up the Python environment and runs tests with tox"
+
+inputs:
+  UV_INDEX:
+    description: "The URL(s) for the Python package index, including any authentication"
+    required: true
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Python Environment
+      uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.1.0
+      with:
+        UV_INDEX: ${{ inputs.UV_INDEX }}
+
+    - name: Install tox
+      shell: bash
+      run: uv tool install tox --with tox-uv
+
+    - name: Run tests with tox
+      shell: bash
+      env:
+        UV_INDEX: ${{ inputs.UV_INDEX }}
+        UV_NO_CACHE: "1"
+      run: uv run tox
+

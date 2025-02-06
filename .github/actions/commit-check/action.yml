@@ -1,0 +1,63 @@
+name: "Conventional Commits Check"
+description: "Checks if commits follow the Conventional Commits specification"
+
+inputs:
+  base_branch:
+    description: "Base branch to compare commits against"
+    required: false
+    default: "main"
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check current branch
+      id: check_branch
+      shell: bash
+      run: |
+        # Skip if we're on the base branch
+        current_branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$current_branch" = "${{ inputs.base_branch }}" ]; then
+          echo "Skipping commit check on base branch"
+          echo "skip=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Check if there are any commits to validate
+        if ! git rev-list --count origin/${{ inputs.base_branch }}..HEAD &>/dev/null || [ "$(git rev-list --count origin/${{ inputs.base_branch }}..HEAD)" -eq 0 ]; then
+          echo "No commits to check - skipping"
+          echo "skip=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Skip if HEAD is a tag and points to the same commit as base branch
+        if git rev-parse --verify HEAD^{tag} >/dev/null 2>&1; then
+          tag_commit=$(git rev-parse HEAD)
+          base_commit=$(git rev-parse origin/${{ inputs.base_branch }})
+          if [ "$tag_commit" = "$base_commit" ]; then
+            echo "Skipping commit check for release tag"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+        fi
+
+        echo "skip=false" >> $GITHUB_OUTPUT
+
+    - name: Skip Notice
+      if: steps.check_branch.outputs.skip == 'true'
+      shell: bash
+      run: echo "No commit checking needed - marking as successful"
+
+    - uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.1.0
+      if: steps.check_branch.outputs.skip != 'true'
+
+    - name: Install commitizen
+      if: steps.check_branch.outputs.skip != 'true'
+      shell: bash
+      run: uv tool install commitizen
+
+    - name: Check commits
+      if: steps.check_branch.outputs.skip != 'true'
+      shell: bash
+      run: cz check --rev origin/${{ inputs.base_branch }}..HEAD
+
