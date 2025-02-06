@@ -1,0 +1,57 @@
+name: Test Workflow
+
+on:
+  workflow_call:
+
+jobs:
+  lint:
+    name: Lint Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-python
+        with:
+          python_version: "3.9"
+          UV_INDEX: "https://gsp-archive:${{ secrets.PRIVATE_PYPI_PASSWORD }}@pypiserver.gsplabs.com/ https://pypi.org/simple"
+          install_deps: "true"
+          install_dev_deps: "true"
+
+      - uses: ./.github/actions/lint
+        with:
+          python_target_version: "3.9"
+
+  commit_check:
+    name: Check Commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - uses: ./.github/actions/commit-check
+
+  test:
+    name: Run Tests
+    needs: [lint, commit_check]
+    runs-on: ubuntu-latest
+    if: |
+      needs.lint.result == 'success' && 
+      needs.commit_check.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        env:
+          PRIVATE_PYPI_PASSWORD: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
+        run: |
+          if [ -z "$PRIVATE_PYPI_PASSWORD" ]; then
+            echo "Error: PRIVATE_PYPI_PASSWORD secret is not set!"
+            exit 1
+          fi
+
+      - name: Setup and Run Tests
+        uses: ./.github/actions/setup-and-test
+        with:
+          UV_INDEX: "https://gsp-archive:${{ secrets.PRIVATE_PYPI_PASSWORD }}@pypiserver.gsplabs.com/ https://pypi.org/simple"
+

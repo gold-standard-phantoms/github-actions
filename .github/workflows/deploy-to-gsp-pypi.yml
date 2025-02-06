@@ -1,0 +1,24 @@
+name: Deploy to GSP pypi Workflow
+
+on:
+  workflow_call:
+
+jobs:
+  trigger_test:
+    uses: ./.github/workflows/python-test.yml
+    secrets: inherit
+
+  build_and_deploy:
+    name: Build and Deploy
+    needs: [trigger_test]
+    runs-on: ubuntu-latest
+    if: ${{ needs.trigger_test.result == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: ./.github/actions/build-and-deploy-pypi
+        with:
+          pypi_username: ${{ secrets.PRIVATE_PYPI_USERNAME }}
+          pypi_password: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
+          pypi_url: ${{ secrets.PRIVATE_PYPI_URL }}

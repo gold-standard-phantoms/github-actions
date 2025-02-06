@@ -1,0 +1,24 @@
+name: "Run Linting Checks"
+description: "Runs Ruff for linting and formatting checks"
+
+inputs:
+  python_target_version:
+    description: "Target Python version for Ruff checks (e.g. 3.9, 3.10)"
+    required: false
+    default: "3.11"
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Ruff
+      shell: bash
+      run: uv tool install ruff
+
+    - name: Run Ruff
+      shell: bash
+      run: ruff check --target-version py$(echo "${{ inputs.python_target_version }}" | sed 's/\.//')
+
+    - name: Run Ruff Formatter
+      shell: bash
+      run: ruff format --check --diff . 

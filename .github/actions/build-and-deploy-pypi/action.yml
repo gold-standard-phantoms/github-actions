@@ -1,0 +1,53 @@
+name: "Build and Deploy to PyPI"
+description: "Builds Python package and deploys to a PyPI repository"
+
+inputs:
+  pypi_username:
+    description: "PyPI username for authentication"
+    required: true
+    type: string
+  pypi_password:
+    description: "PyPI password for authentication"
+    required: true
+    type: string
+  pypi_url:
+    description: "PyPI repository URL"
+    required: true
+    type: string
+  python_version:
+    description: "Python version to use for building"
+    required: false
+    default: "3.9"
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        # Fetch all tags for setuptools_scm version detection
+        ref: ${{ github.event.pull_request.head.ref || github.event.release.tag_name || github.ref }}
+
+    - uses: ./.github/actions/setup-python
+      with:
+        python_version: ${{ inputs.python_version }}
+        UV_INDEX: "https://gsp-archive:${{ inputs.pypi_password }}@pypiserver.gsplabs.com/ https://pypi.org/simple"
+
+    - name: Install build tools
+      shell: bash
+      run: |
+        uv tool install build
+        uv tool install twine
+
+    - name: Build package
+      shell: bash
+      run: pyproject-build
+
+    - name: Upload to PyPI
+      shell: bash
+      env:
+        TWINE_USERNAME: ${{ inputs.pypi_username }}
+        TWINE_PASSWORD: ${{ inputs.pypi_password }}
+        TWINE_REPOSITORY_URL: ${{ inputs.pypi_url }}
+      run: twine upload dist/* 
