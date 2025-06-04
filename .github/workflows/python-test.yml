@@ -21,6 +21,12 @@ on:
         required: false
         default: false
 
+      dvc_version:
+        description: "Version of DVC to install. If not set, will use latest version."
+        type: string
+        required: false
+        default: ""
+
 jobs:
   lint:
     name: Lint Checks
@@ -68,9 +74,17 @@ jobs:
             exit 1
           fi
 
-      - name: Set up DVC
+      - name: Set up DVC (specific version)
+        if: ${{ inputs.use_dvc && inputs.dvc_version != '' }}
         uses: iterative/setup-dvc@v1
-        if: ${{ inputs.use_dvc }}
+        with:
+          version: ${{ inputs.dvc_version }}
+
+      - name: Set up DVC (latest version)
+        if: ${{ inputs.use_dvc && inputs.dvc_version == '' }}
+        uses: iterative/setup-dvc@v1
+        with:
+          version: 'latest'
         
       - name: Pull DVC data
         run: dvc pull
