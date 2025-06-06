@@ -21,13 +21,20 @@ on:
         required: false
         default: false
 
+      dvc_version:
+        description: "Version of DVC to install. If not set, will use latest version."
+        type: string
+        required: false
+        default: ""
+
 jobs:
   trigger_test:
-    uses: gold-standard-phantoms/github-actions/.github/workflows/python-test.yml@v0.1.0
+    uses: gold-standard-phantoms/github-actions/.github/workflows/python-test.yml@8e9b7d6b4bee8ef97db704fe2ed55806a3020cb9
     with:
       python_version: ${{ inputs.python_version }}
       ruff_version: ${{ inputs.ruff_version }}
       use_dvc: ${{ inputs.use_dvc }}
+      dvc_version: ${{ inputs.dvc_version }}
     secrets: inherit
 
   build_and_deploy:
