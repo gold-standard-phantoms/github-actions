@@ -56,22 +56,30 @@ jobs:
       - uses: gold-standard-phantoms/github-actions/.github/actions/commit-check@v0.1.0
 
   test:
-    name: Run Tests
+    name: Run Tests (${{ matrix.os }})
     needs: [lint, commit_check]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     if: |
       needs.lint.result == 'success' && 
       needs.commit_check.result == 'success'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
 
       - name: Check required secrets
         env:
           PRIVATE_PYPI_PASSWORD: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
+        shell: ${{ matrix.os == 'windows-latest' && 'powershell' || 'bash' }}
         run: |
-          if [ -z "$PRIVATE_PYPI_PASSWORD" ]; then
-            echo "Error: PRIVATE_PYPI_PASSWORD secret is not set!"
-            exit 1
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            if (-not $env:PRIVATE_PYPI_PASSWORD) { Write-Error "Error: PRIVATE_PYPI_PASSWORD secret is not set!"; exit 1 }
+          else
+            if [ -z "$PRIVATE_PYPI_PASSWORD" ]; then
+              echo "Error: PRIVATE_PYPI_PASSWORD secret is not set!"
+              exit 1
+            fi
           fi
 
       - name: Set up DVC (specific version)

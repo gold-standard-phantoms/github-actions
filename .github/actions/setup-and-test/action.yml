@@ -10,10 +10,11 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup Python Environment
-      uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.1.0
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
       with:
-        UV_INDEX: ${{ inputs.UV_INDEX }}
+        version: "latest"
+        enable-cache: "true"
 
     - name: Install tox
       shell: bash
