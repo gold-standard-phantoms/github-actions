@@ -28,7 +28,9 @@ jobs:
     uses: gold-standard-phantoms/github-actions/.github/workflows/deploy-to-gsp-pypi.yml@main # Replace 'main' with a tag or commit SHA for production
     with:
       python_version: "3.11" # Replace with the version of Python you want to use for testing and linting
-      ruff_version: "latest" # Replace with the version of Ruff you want to use for testing and linting
+      # ruff_version: "0.9.10" # Optional: Override the version from uv.lock
+      # mypy_version: "1.15.0" # Optional: Override the version from uv.lock
+      # uv_lock_path: "./backend/uv.lock" # Optional: Custom path for monorepos
       use_dvc: true # Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets.
     secrets: inherit
 ```
@@ -40,6 +42,14 @@ The calling repository (the repository where you use this workflow) must have th
 *   `PRIVATE_PYPI_USERNAME`:  Username for the private PyPI server.
 *   `PRIVATE_PYPI_PASSWORD`: Password or token for the private PyPI server.
 *   `PRIVATE_PYPI_URL`: URL of the private PyPI server.
+
+**Tool Version Management:**
+
+By default, the workflows will automatically use the versions of `ruff` and `mypy` specified in your project's `uv.lock` file. This ensures consistency between your local development environment and CI/CD. You can:
+
+- Override tool versions by explicitly setting `ruff_version` or `mypy_version`
+- Specify a custom `uv.lock` path for monorepo setups using `uv_lock_path`
+- If no `uv.lock` is found or the tools aren't present in it, the workflows will use the latest versions
 
 **Workflow Details:**
 
@@ -72,7 +82,9 @@ jobs:
     uses: gold-standard-phantoms/github-actions/.github/workflows/python-test.yml@main # Replace 'main' with a tag or commit SHA for production
     with:
       python_version: "3.11" # Replace with the version of Python you want to use for testing and linting
-      ruff_version: "latest" # Replace with the version of Ruff you want to use for testing and linting
+      # ruff_version: "0.9.10" # Optional: Override the version from uv.lock
+      # mypy_version: "1.15.0" # Optional: Override the version from uv.lock
+      # uv_lock_path: "./backend/uv.lock" # Optional: Custom path for monorepos
       use_dvc: true # Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets.
     secrets: inherit
 ```

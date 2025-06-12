@@ -10,10 +10,22 @@ on:
         default: "3.9"
 
       ruff_version:
-        description: "Version of Ruff to use"
+        description: "Version of Ruff to use (defaults to version in uv.lock if found)"
         type: string
         required: false
-        default: "latest"
+        default: ""
+
+      mypy_version:
+        description: "Version of MyPy to use (defaults to version in uv.lock if found)"
+        type: string
+        required: false
+        default: ""
+
+      uv_lock_path:
+        description: "Path to uv.lock file (defaults to ./uv.lock)"
+        type: string
+        required: false
+        default: "./uv.lock"
 
       use_dvc:
         description: "Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets."
@@ -33,6 +45,8 @@ jobs:
     with:
       python_version: ${{ inputs.python_version }}
       ruff_version: ${{ inputs.ruff_version }}
+      mypy_version: ${{ inputs.mypy_version }}
+      uv_lock_path: ${{ inputs.uv_lock_path }}
       use_dvc: ${{ inputs.use_dvc }}
       dvc_version: ${{ inputs.dvc_version }}
     secrets: inherit
