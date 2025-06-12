@@ -9,17 +9,46 @@ inputs:
     type: string
 
   ruff_version:
-    description: "Version of Ruff to use"
+    description: "Version of Ruff to use (defaults to version in uv.lock if found)"
     required: false
-    default: "latest"
+    default: ""
+    type: string
+
+  uv_lock_path:
+    description: "Path to uv.lock file (defaults to ./uv.lock)"
+    required: false
+    default: "./uv.lock"
     type: string
 
 runs:
   using: "composite"
   steps:
+    - name: Determine Ruff version
+      id: get-ruff-version
+      shell: bash
+      run: |
+        # First check if explicit version is provided
+        if [ -n "${{ inputs.ruff_version }}" ]; then
+          echo "version=${{ inputs.ruff_version }}" >> $GITHUB_OUTPUT
+          echo "Using explicitly provided Ruff version: ${{ inputs.ruff_version }}"
+        elif [ -f "${{ inputs.uv_lock_path }}" ]; then
+          # Extract ruff version from uv.lock TOML file using grep and sed
+          RUFF_VERSION=$(grep -A2 '^name = "ruff"$' "${{ inputs.uv_lock_path }}" | grep '^version = ' | sed 's/version = "\(.*\)"/\1/' || echo "")
+          if [ -n "$RUFF_VERSION" ]; then
+            echo "version=$RUFF_VERSION" >> $GITHUB_OUTPUT
+            echo "Using Ruff version from uv.lock: $RUFF_VERSION"
+          else
+            echo "version=latest" >> $GITHUB_OUTPUT
+            echo "Ruff not found in uv.lock, using latest version"
+          fi
+        else
+          echo "version=latest" >> $GITHUB_OUTPUT
+          echo "No uv.lock file found at ${{ inputs.uv_lock_path }}, using latest version"
+        fi
+
     - name: Install Ruff
       shell: bash
-      run: uv tool install ruff@${{ inputs.ruff_version }}
+      run: uv tool install ruff@${{ steps.get-ruff-version.outputs.version }}
 
     - name: Run Ruff
       shell: bash

@@ -14,6 +14,18 @@ inputs:
     default: "3.11"
     type: string
 
+  mypy_version:
+    description: "Version of MyPy to use (defaults to version in uv.lock if found)"
+    required: false
+    default: ""
+    type: string
+
+  uv_lock_path:
+    description: "Path to uv.lock file (defaults to ./uv.lock)"
+    required: false
+    default: "./uv.lock"
+    type: string
+
 runs:
   using: "composite"
   steps:
@@ -24,9 +36,37 @@ runs:
         install_deps: "true"
         install_dev_deps: "true"
 
+    - name: Determine MyPy version
+      id: get-mypy-version
+      shell: bash
+      run: |
+        # First check if explicit version is provided
+        if [ -n "${{ inputs.mypy_version }}" ]; then
+          echo "version=${{ inputs.mypy_version }}" >> $GITHUB_OUTPUT
+          echo "Using explicitly provided MyPy version: ${{ inputs.mypy_version }}"
+        elif [ -f "${{ inputs.uv_lock_path }}" ]; then
+          # Extract mypy version from uv.lock TOML file using grep and sed
+          MYPY_VERSION=$(grep -A2 '^name = "mypy"$' "${{ inputs.uv_lock_path }}" | grep '^version = ' | sed 's/version = "\(.*\)"/\1/' || echo "")
+          if [ -n "$MYPY_VERSION" ]; then
+            echo "version=$MYPY_VERSION" >> $GITHUB_OUTPUT
+            echo "Using MyPy version from uv.lock: $MYPY_VERSION"
+          else
+            echo "version=" >> $GITHUB_OUTPUT
+            echo "MyPy not found in uv.lock, using latest version"
+          fi
+        else
+          echo "version=" >> $GITHUB_OUTPUT
+          echo "No uv.lock file found at ${{ inputs.uv_lock_path }}, using latest version"
+        fi
+
     - name: Install MyPy
       shell: bash
-      run: uv tool install mypy
+      run: |
+        if [ -n "${{ steps.get-mypy-version.outputs.version }}" ]; then
+          uv tool install mypy@${{ steps.get-mypy-version.outputs.version }}
+        else
+          uv tool install mypy
+        fi
 
     - name: Run MyPy
       shell: bash
