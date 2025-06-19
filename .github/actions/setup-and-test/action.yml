@@ -11,7 +11,7 @@ runs:
   using: "composite"
   steps:
     - name: Setup Python Environment
-      uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.1.0
+      uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.2.0
       with:
         UV_INDEX: ${{ inputs.UV_INDEX }}
 
@@ -25,4 +25,3 @@ runs:
         UV_INDEX: ${{ inputs.UV_INDEX }}
         UV_NO_CACHE: "1"
       run: uv run tox
-
