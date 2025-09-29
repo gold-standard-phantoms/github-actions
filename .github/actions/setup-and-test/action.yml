@@ -7,6 +7,12 @@ inputs:
     required: true
     type: string
 
+  working_directory:
+    description: "Working directory for the Python project (useful for monorepos)"
+    required: false
+    default: "."
+    type: string
+
 runs:
   using: "composite"
   steps:
@@ -14,13 +20,16 @@ runs:
       uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.2.0
       with:
         UV_INDEX: ${{ inputs.UV_INDEX }}
+        working_directory: ${{ inputs.working_directory }}
 
     - name: Install tox
       shell: bash
+      working-directory: ${{ inputs.working_directory }}
       run: uv tool install tox --with tox-uv
 
     - name: Run tests with tox
       shell: bash
+      working-directory: ${{ inputs.working_directory }}
       env:
         UV_INDEX: ${{ inputs.UV_INDEX }}
         UV_NO_CACHE: "1"

@@ -19,6 +19,11 @@ inputs:
     required: false
     default: "3.9"
     type: string
+  working_directory:
+    description: "Working directory for the Python project (useful for monorepos)"
+    required: false
+    default: "."
+    type: string
 
 runs:
   using: "composite"
@@ -33,6 +38,7 @@ runs:
       with:
         python_version: ${{ inputs.python_version }}
         UV_INDEX: "https://gsp-archive:${{ inputs.pypi_password }}@pypiserver.gsplabs.com/ https://pypi.org/simple"
+        working_directory: ${{ inputs.working_directory }}
 
     - name: Install build tools
       shell: bash
@@ -42,10 +48,12 @@ runs:
 
     - name: Build package
       shell: bash
+      working-directory: ${{ inputs.working_directory }}
       run: pyproject-build
 
     - name: Upload to PyPI
       shell: bash
+      working-directory: ${{ inputs.working_directory }}
       env:
         TWINE_USERNAME: ${{ inputs.pypi_username }}
         TWINE_PASSWORD: ${{ inputs.pypi_password }}

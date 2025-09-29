@@ -20,6 +20,12 @@ inputs:
     default: "./uv.lock"
     type: string
 
+  working_directory:
+    description: "Working directory for the Python project (useful for monorepos)"
+    required: false
+    default: "."
+    type: string
+
 runs:
   using: "composite"
   steps:
@@ -52,8 +58,10 @@ runs:
 
     - name: Run Ruff
       shell: bash
+      working-directory: ${{ inputs.working_directory }}
       run: ruff check --target-version py$(echo "${{ inputs.python_target_version }}" | sed 's/\.//')
 
     - name: Run Ruff Formatter
       shell: bash
+      working-directory: ${{ inputs.working_directory }}
       run: ruff format --target-version py$(echo "${{ inputs.python_target_version }}" | sed 's/\.//') --check --diff . 
