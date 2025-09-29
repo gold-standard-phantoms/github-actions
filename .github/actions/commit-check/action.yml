@@ -48,7 +48,7 @@ runs:
       shell: bash
       run: echo "No commit checking needed - marking as successful"
 
-    - uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.2.0
+    - uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.3.0
       if: steps.check_branch.outputs.skip != 'true'
 
     - name: Install commitizen

@@ -47,7 +47,7 @@ on:
 
 jobs:
   trigger_test:
-    uses: gold-standard-phantoms/github-actions/.github/workflows/python-test.yml@v0.2.0
+    uses: gold-standard-phantoms/github-actions/.github/workflows/python-test.yml@v0.3.0
     with:
       python_version: ${{ inputs.python_version }}
       ruff_version: ${{ inputs.ruff_version }}
@@ -70,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: gold-standard-phantoms/github-actions/.github/actions/build-and-deploy-pypi@v0.2.0
+      - uses: gold-standard-phantoms/github-actions/.github/actions/build-and-deploy-pypi@v0.3.0
         with:
           pypi_username: ${{ secrets.PRIVATE_PYPI_USERNAME }}
           pypi_password: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
