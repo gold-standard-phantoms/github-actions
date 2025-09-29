@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2025-09-29
+
+### 🚀 Features
+
+- Add working_directory parameter for monorepo support
+
 ## [0.2.0] - 2025-06-19
 
 ### 🚀 Features
