@@ -17,7 +17,7 @@ runs:
   using: "composite"
   steps:
     - name: Setup Python Environment
-      uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.2.0
+      uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.3.0
       with:
         UV_INDEX: ${{ inputs.UV_INDEX }}
         working_directory: ${{ inputs.working_directory }}

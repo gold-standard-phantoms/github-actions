@@ -29,7 +29,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.2.0
+    - uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.3.0
       with:
         UV_INDEX: ${{ inputs.UV_INDEX }}
         python_version: ${{ inputs.python_version }}
