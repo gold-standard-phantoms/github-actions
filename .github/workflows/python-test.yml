@@ -27,6 +27,12 @@ on:
         required: false
         default: "./uv.lock"
 
+      working_directory:
+        description: "Working directory for the Python project (useful for monorepos)"
+        type: string
+        required: false
+        default: "."
+
       use_dvc:
         description: "Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets."
         type: boolean
@@ -43,6 +49,9 @@ jobs:
   lint:
     name: Lint Checks
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     steps:
       - uses: actions/checkout@v4
 
@@ -52,12 +61,14 @@ jobs:
           UV_INDEX: "https://gsp-archive:${{ secrets.PRIVATE_PYPI_PASSWORD }}@pypiserver.gsplabs.com/ https://pypi.org/simple"
           install_deps: "true"
           install_dev_deps: "true"
+          working_directory: ${{ inputs.working_directory }}
 
       - uses: gold-standard-phantoms/github-actions/.github/actions/lint@v0.2.0
         with:
           python_target_version: ${{ inputs.python_version }}
           ruff_version: ${{ inputs.ruff_version }}
           uv_lock_path: ${{ inputs.uv_lock_path }}
+          working_directory: ${{ inputs.working_directory }}
   commit_check:
     name: Check Commits
     runs-on: ubuntu-latest
@@ -72,6 +83,9 @@ jobs:
     name: Run Tests
     needs: [lint, commit_check]
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
     if: |
       needs.lint.result == 'success' && 
       needs.commit_check.result == 'success'
@@ -110,3 +124,4 @@ jobs:
         uses: gold-standard-phantoms/github-actions/.github/actions/setup-and-test@v0.2.0
         with:
           UV_INDEX: "https://gsp-archive:${{ secrets.PRIVATE_PYPI_PASSWORD }}@pypiserver.gsplabs.com/ https://pypi.org/simple"
+          working_directory: ${{ inputs.working_directory }}

@@ -31,6 +31,7 @@ jobs:
       # ruff_version: "0.9.10" # Optional: Override the version from uv.lock
       # mypy_version: "1.15.0" # Optional: Override the version from uv.lock
       # uv_lock_path: "./backend/uv.lock" # Optional: Custom path for monorepos
+      # working_directory: "./backend" # Optional: Working directory for monorepos
       use_dvc: true # Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets.
     secrets: inherit
 ```
@@ -49,7 +50,12 @@ By default, the workflows will automatically use the versions of `ruff` and `myp
 
 - Override tool versions by explicitly setting `ruff_version` or `mypy_version`
 - Specify a custom `uv.lock` path for monorepo setups using `uv_lock_path`
+- Set a custom working directory for monorepo projects using `working_directory`
 - If no `uv.lock` is found or the tools aren't present in it, the workflows will use the latest versions
+
+**Monorepo Support:**
+
+For monorepo projects where your Python package is not in the repository root, use the `working_directory` parameter to specify the path to your Python project. This parameter is supported by both `deploy-to-gsp-pypi.yml` and `python-test.yml` workflows
 
 **Workflow Details:**
 
@@ -85,6 +91,7 @@ jobs:
       # ruff_version: "0.9.10" # Optional: Override the version from uv.lock
       # mypy_version: "1.15.0" # Optional: Override the version from uv.lock
       # uv_lock_path: "./backend/uv.lock" # Optional: Custom path for monorepos
+      # working_directory: "./backend" # Optional: Working directory for monorepos
       use_dvc: true # Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets.
     secrets: inherit
 ```
