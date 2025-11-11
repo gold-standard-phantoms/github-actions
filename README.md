@@ -111,12 +111,67 @@ The `python-test.yml` workflow internally performs the following jobs:
 2.  **Commit Checks:** Checks if commit messages follow the Conventional Commits specification.
 3.  **Tests:** Runs Python tests using `tox`.
 
+
+### `dependency-vulnerability-check.yml`
+
+This workflow performs security checks on Python dependencies using `pip-audit` to identify known vulnerabilities in your project's dependencies.
+
+**Usage:**
+
+To use this workflow in your repository, create a workflow file (e.g., `.github/workflows/dependency-vulnerability-check.yml`) with the following content:
+
+```yaml
+name: Dependency Vulnerability Check
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * 1'  # Run weekly on Mondays at midnight UTC
+
+jobs:
+  dependency_vulnerability_check:
+    name: Check Dependency Vulnerabilities
+    uses: gold-standard-phantoms/github-actions/.github/workflows/dependency-vulnerability-check.yml@main # Replace 'main' with a tag or commit SHA for production
+    with:
+      python_version: "3.11" # Replace with the version of Python you want to use
+      # working_directory: "./backend" # Optional: Working directory for monorepos
+      # pip_audit_version: "2.6.1" # Optional: Specific version of pip-audit (defaults to latest)
+```
+
+**Workflow Details:**
+
+The `dependency-vulnerability-check.yml` workflow performs the following steps:
+
+1.  **Generates Requirements:** Uses `uv` to compile requirements from `pyproject.toml` or generates them from installed packages.
+2.  **Installs pip-audit:** Installs the `pip-audit` tool in a virtual environment.
+3.  **Runs Security Scan:** Scans all dependencies for known security vulnerabilities.
+4.  **Uploads Artefacts:** Saves the generated `requirements.txt` file as a workflow artefact for review.
+
+**Parameters:**
+
+- `python_version`: Python version to use (default: "3.9")
+- `working_directory`: Working directory for monorepo projects (default: ".")
+- `pip_audit_version`: Specific version of pip-audit to use (defaults to latest)
+
+**Note:** The workflow will always fail if vulnerabilities are discovered. This ensures that security issues are addressed before code is merged.
+
+**Scheduled Checks:**
+
+It's recommended to run this workflow on a schedule (e.g., weekly) to catch newly discovered vulnerabilities in your dependencies, even when no code changes are made.
+
+
 ## Actions
 
 This repository also contains reusable GitHub Actions that are used by the workflows and can be used independently if needed.  For detailed documentation on each action (inputs, outputs, and usage examples), please refer to the `action.yml` file within each action's directory.
 
 *   `build-and-deploy-pypi`: Builds and deploys a Python package to PyPI.
 *   `commit-check`: Checks commit messages against the Conventional Commits specification.
+*   `dependency-vulnerability-check`: Scans Python dependencies for known security vulnerabilities using `pip-audit`.
 *   `lint`: Runs Python linting checks.
 *   `setup-and-test`: Sets up a Python environment and runs tests using `tox`.
 *   `setup-python`: Sets up a Python environment with `uv` and configures PyPI index URLs.
