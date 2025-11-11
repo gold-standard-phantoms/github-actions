@@ -1,0 +1,36 @@
+name: "Documentation Build Check"
+description: "Checks that the make docs command runs without errors"
+
+inputs:
+  python_version:
+    description: "Target Python version for documentation checks (e.g. 3.9, 3.10)"
+    required: false
+    default: "3.11"
+
+  UV_INDEX:
+    description: "The URL(s) for the Python package index, including any authentication"
+    required: false
+    default: "."
+
+  working_directory:
+    description: "Working directory for the Python project (useful for monorepos)"
+    required: false
+    default: "."
+
+runs:
+  using: "composite"
+  steps:
+    - uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.3.0
+      with:
+        UV_INDEX: ${{ inputs.UV_INDEX }}
+        python_version: ${{ inputs.python_version }}
+        install_deps: "true"
+        install_dev_deps: "true"
+        working_directory: ${{ inputs.working_directory }}
+    - name: "Check if documentation can be built"
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        UV_INDEX: ${{ inputs.UV_INDEX }}
+      run: uv run mkdocs build -s
+      # Share the UV_INDEX environment variable with mkdocs as it needs access to them for document building.

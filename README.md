@@ -93,6 +93,7 @@ jobs:
       # uv_lock_path: "./backend/uv.lock" # Optional: Custom path for monorepos
       # working_directory: "./backend" # Optional: Working directory for monorepos
       use_dvc: true # Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets.
+      docs: false # Whether to evaluate mkdocs builds without error. 
     secrets: inherit
 ```
 
