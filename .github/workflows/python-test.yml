@@ -44,6 +44,12 @@ on:
         type: string
         required: false
         default: ""
+        
+      docs:
+        description: "Whether to evaluate mkdocs builds without error"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   lint:
@@ -125,3 +131,16 @@ jobs:
         with:
           UV_INDEX: "https://gsp-archive:${{ secrets.PRIVATE_PYPI_PASSWORD }}@pypiserver.gsplabs.com/ https://pypi.org/simple"
           working_directory: ${{ inputs.working_directory }}
+
+  check-docs:
+    name: Check Documentation
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gold-standard-phantoms/github-actions/.github/actions/check-docs@main
+        with:
+          python_version: ${{ inputs.python_version }}
+          UV_INDEX: "https://gsp-archive:${{ secrets.PRIVATE_PYPI_PASSWORD }}@pypiserver.gsplabs.com/ https://pypi.org/simple"
+          working_directory: ${{ inputs.working_directory }}
+        if: ${{ inputs.docs }}      
