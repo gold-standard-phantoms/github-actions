@@ -57,6 +57,11 @@ on:
         required: false
         default: true
 
+      lfs:
+        description: "Whether to enable git Large File Storage access from the test."
+        type: boolean
+        required: false
+        default: false
 jobs:
   lint:
     name: Lint Checks
@@ -103,6 +108,8 @@ jobs:
       needs.commit_check.result == 'success'
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: ${{ inputs.lfs }}
 
       - name: Check required secrets
         if: ${{ inputs.use_private_pypi }}
