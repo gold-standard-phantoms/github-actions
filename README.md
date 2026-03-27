@@ -29,10 +29,13 @@ jobs:
     with:
       python_version: "3.11" # Replace with the version of Python you want to use for testing and linting
       # ruff_version: "0.9.10" # Optional: Override the version from uv.lock
-      # mypy_version: "1.15.0" # Optional: Override the version from uv.lock
+      # mypy_version: "1.15.0" # Optional: Override the version from uv.lock (only used when mypy is enabled)
       # uv_lock_path: "./backend/uv.lock" # Optional: Custom path for monorepos
       # working_directory: "./backend" # Optional: Working directory for monorepos
-      use_dvc: true # Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets.
+      # use_dvc: true # Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets.
+      # dvc_version: "3.55.2" # Optional: Specific DVC version (defaults to latest)
+      # use_private_pypi: true # Whether to use the private GSP PyPI server (default: true)
+      # mypy: true # Whether to run MyPy static type checking (default: false)
     secrets: inherit
 ```
 
@@ -89,11 +92,15 @@ jobs:
     with:
       python_version: "3.11" # Replace with the version of Python you want to use for testing and linting
       # ruff_version: "0.9.10" # Optional: Override the version from uv.lock
-      # mypy_version: "1.15.0" # Optional: Override the version from uv.lock
+      # mypy_version: "1.15.0" # Optional: Override the version from uv.lock (only used when mypy is enabled)
       # uv_lock_path: "./backend/uv.lock" # Optional: Custom path for monorepos
       # working_directory: "./backend" # Optional: Working directory for monorepos
-      use_dvc: true # Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets.
-      docs: false # Whether to evaluate mkdocs builds without error. 
+      # use_dvc: true # Whether to use DVC to pull data. Expects AWS credentials to be set in the repository secrets.
+      # dvc_version: "3.55.2" # Optional: Specific DVC version (defaults to latest)
+      # use_private_pypi: true # Whether to use the private GSP PyPI server (default: true)
+      # mypy: true # Whether to run MyPy static type checking (default: false)
+      # docs: true # Whether to evaluate mkdocs builds without error (default: false)
+      # lfs: true # Whether to enable git Large File Storage access from the test (default: false)
     secrets: inherit
 ```
 
@@ -107,9 +114,11 @@ The calling repository must have the following secret defined:
 
 The `python-test.yml` workflow internally performs the following jobs:
 
-1.  **Lint Checks:** Runs linting checks using `ruff` and `mypy`.
+1.  **Lint Checks:** Runs linting and formatting checks using `ruff`.
 2.  **Commit Checks:** Checks if commit messages follow the Conventional Commits specification.
-3.  **Tests:** Runs Python tests using `tox`.
+3.  **Static Analysis (optional):** Runs `mypy` static type checking when `mypy: true` is set.
+4.  **Tests:** Runs Python tests using `tox`.
+5.  **Documentation Check (optional):** Validates `mkdocs` builds when `docs: true` is set.
 
 
 ### `dependency-vulnerability-check.yml`
@@ -141,6 +150,8 @@ jobs:
       python_version: "3.11" # Replace with the version of Python you want to use
       # working_directory: "./backend" # Optional: Working directory for monorepos
       # pip_audit_version: "2.6.1" # Optional: Specific version of pip-audit (defaults to latest)
+      # use_private_pypi: true # Whether to use the private GSP PyPI server (default: true)
+    secrets: inherit
 ```
 
 **Workflow Details:**
@@ -157,6 +168,7 @@ The `dependency-vulnerability-check.yml` workflow performs the following steps:
 - `python_version`: Python version to use (default: "3.9")
 - `working_directory`: Working directory for monorepo projects (default: ".")
 - `pip_audit_version`: Specific version of pip-audit to use (defaults to latest)
+- `use_private_pypi`: Whether to use the private GSP PyPI server (default: true). Requires `PRIVATE_PYPI_PASSWORD` secret when enabled.
 
 **Note:** The workflow will always fail if vulnerabilities are discovered. This ensures that security issues are addressed before code is merged.
 
@@ -170,12 +182,13 @@ It's recommended to run this workflow on a schedule (e.g., weekly) to catch newl
 This repository also contains reusable GitHub Actions that are used by the workflows and can be used independently if needed.  For detailed documentation on each action (inputs, outputs, and usage examples), please refer to the `action.yml` file within each action's directory.
 
 *   `build-and-deploy-pypi`: Builds and deploys a Python package to PyPI.
+*   `check-docs`: Validates that documentation builds successfully using `mkdocs`.
 *   `commit-check`: Checks commit messages against the Conventional Commits specification.
 *   `dependency-vulnerability-check`: Scans Python dependencies for known security vulnerabilities using `pip-audit`.
-*   `lint`: Runs Python linting checks.
+*   `lint`: Runs `ruff` linting and formatting checks.
 *   `setup-and-test`: Sets up a Python environment and runs tests using `tox`.
 *   `setup-python`: Sets up a Python environment with `uv` and configures PyPI index URLs.
-*   `static-analysis`: Performs static analysis checks (currently empty - for future expansion).
+*   `static-analysis`: Runs `mypy` static type checking with version auto-detection from `uv.lock`.
 
 ## Versioning and Stability
 
@@ -184,10 +197,10 @@ This repository also contains reusable GitHub Actions that are used by the workf
 **Example using tags:**
 
 ```yaml
-uses: gold-standard-phantoms/github-actions/.github/workflows/deploy-to-gsp-pypi.yml@v1.0.0 # Using tag v1.0.0
+uses: gold-standard-phantoms/github-actions/.github/workflows/deploy-to-gsp-pypi.yml@v1.0.0 # Using a version tag
 ```
 
-We recommend creating tags for releases of this `github-actions` repository (e.g., `v1.0.0`, `v1.1`, `v2`) and using these tags in your workflow `uses:` statements to ensure stability and reproducibility.
+We recommend using tags in your workflow `uses:` statements to ensure stability and reproducibility. Check the [releases](../../releases) for the latest version.
 
 ---
 
