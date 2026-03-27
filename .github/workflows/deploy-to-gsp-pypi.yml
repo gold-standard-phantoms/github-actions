@@ -57,9 +57,21 @@ on:
         required: false
         default: false
 
+      docs:
+        description: "Whether to evaluate mkdocs builds without error"
+        type: boolean
+        required: false
+        default: false
+
+      lfs:
+        description: "Whether to enable git Large File Storage access from the test."
+        type: boolean
+        required: false
+        default: false
+
 jobs:
   trigger_test:
-    uses: gold-standard-phantoms/github-actions/.github/workflows/python-test.yml@v0.3.0
+    uses: gold-standard-phantoms/github-actions/.github/workflows/python-test.yml@main
     with:
       python_version: ${{ inputs.python_version }}
       ruff_version: ${{ inputs.ruff_version }}
@@ -70,6 +82,8 @@ jobs:
       dvc_version: ${{ inputs.dvc_version }}
       use_private_pypi: ${{ inputs.use_private_pypi }}
       mypy: ${{ inputs.mypy }}
+      docs: ${{ inputs.docs }}
+      lfs: ${{ inputs.lfs }}
     secrets: inherit
 
   build_and_deploy:
