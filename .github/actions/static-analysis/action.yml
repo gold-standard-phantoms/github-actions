@@ -26,6 +26,12 @@ inputs:
     default: "./uv.lock"
     type: string
 
+  working_directory:
+    description: "Working directory for the Python project (useful for monorepos)"
+    required: false
+    default: "."
+    type: string
+
 runs:
   using: "composite"
   steps:
@@ -35,6 +41,7 @@ runs:
         python_version: ${{ inputs.python_version }}
         install_deps: "true"
         install_dev_deps: "true"
+        working_directory: ${{ inputs.working_directory }}
 
     - name: Determine MyPy version
       id: get-mypy-version
@@ -70,4 +77,5 @@ runs:
 
     - name: Run MyPy
       shell: bash
+      working-directory: ${{ inputs.working_directory }}
       run: uv run mypy src

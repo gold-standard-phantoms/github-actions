@@ -51,6 +51,12 @@ on:
         required: false
         default: false
 
+      mypy:
+        description: "Whether to run MyPy static type checking"
+        type: boolean
+        required: false
+        default: false
+
       use_private_pypi:
         description: "Whether to use the private GSP PyPI server. Set to false for repos that don't need private packages."
         type: boolean
@@ -95,6 +101,25 @@ jobs:
           fetch-depth: 0
 
       - uses: gold-standard-phantoms/github-actions/.github/actions/commit-check@v0.3.0
+
+  static_analysis:
+    name: Static Analysis
+    needs: [commit_check]
+    if: ${{ inputs.mypy }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: gold-standard-phantoms/github-actions/.github/actions/static-analysis@main
+        with:
+          UV_INDEX: ${{ inputs.use_private_pypi && format('https://gsp-archive:{0}@pypiserver.gsplabs.com/ https://pypi.org/simple', secrets.PRIVATE_PYPI_PASSWORD) || 'https://pypi.org/simple' }}
+          python_version: ${{ inputs.python_version }}
+          mypy_version: ${{ inputs.mypy_version }}
+          uv_lock_path: ${{ inputs.uv_lock_path }}
+          working_directory: ${{ inputs.working_directory }}
 
   test:
     name: Run Tests

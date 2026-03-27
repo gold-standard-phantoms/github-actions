@@ -51,6 +51,12 @@ on:
         required: false
         default: true
 
+      mypy:
+        description: "Whether to run MyPy static type checking"
+        type: boolean
+        required: false
+        default: false
+
 jobs:
   trigger_test:
     uses: gold-standard-phantoms/github-actions/.github/workflows/python-test.yml@v0.3.0
@@ -63,6 +69,7 @@ jobs:
       use_dvc: ${{ inputs.use_dvc }}
       dvc_version: ${{ inputs.dvc_version }}
       use_private_pypi: ${{ inputs.use_private_pypi }}
+      mypy: ${{ inputs.mypy }}
     secrets: inherit
 
   build_and_deploy:
