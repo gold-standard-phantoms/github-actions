@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-03-28
+
+### 🐛 Bug Fixes
+
+- *(vuln-check)* Remove redundant uv venv that collides with setup-python
+
 ## [0.4.0] - 2026-03-28
 
 ### 🚀 Features
