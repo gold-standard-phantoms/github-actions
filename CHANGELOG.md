@@ -2,11 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-03-28
+
+### 🚀 Features
+
+- Add documentation build check
+- Add dependency vulnerability check
+- Optional gsp pypi
+- Enable the use of git lfs stored artefacts in tests
+- Wire up optional MyPy static analysis in workflows
+
+### 🐛 Bug Fixes
+
+- Include gsp pypi in vulnerability scanning
+- Forward all python-test inputs through deploy workflow
+
+### 📚 Documentation
+
+- Update README to reflect current workflow capabilities
+
+### ⚙️ Miscellaneous Tasks
+
+- Prepare for v0.3.0
+
 ## [0.3.0] - 2025-09-29
 
 ### 🚀 Features
 
 - Add working_directory parameter for monorepo support
+
+### 📚 Documentation
+
+- Update changelog for release v0.3.0
 
 ## [0.2.0] - 2025-06-19
 
