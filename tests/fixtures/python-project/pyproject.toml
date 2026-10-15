@@ -1,0 +1,30 @@
+# Minimal project used only by this repository's self-test workflow
+# (.github/workflows/self-test.yml). It is the smallest thing the shared
+# python-test workflow can lint, type-check and test end to end.
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gsp-ci-fixture"
+version = "0.0.0"
+description = "Fixture project for the github-actions self-test"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "mypy==2.3.1",
+  "pytest==9.1.1",
+  "ruff==0.16.9",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+strict = true
+
+[tool.uv]
+# Freeze resolution so the fixture's lock is reproducible and `uv run` never re-resolves.
+exclude-newer = "2026-09-30T00:00:00Z"

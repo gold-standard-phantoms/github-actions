@@ -202,6 +202,22 @@ uses: gold-standard-phantoms/github-actions/.github/workflows/deploy-to-gsp-pypi
 
 We recommend using tags in your workflow `uses:` statements to ensure stability and reproducibility. Check the [releases](../../releases) for the latest version.
 
+## Self-test (CI for this repository)
+
+`.github/workflows/self-test.yml` runs on every branch push and on pull requests to `main`. The **`Self Test`** job is the check to require on `main`; it fails unless every other job succeeded.
+
+*   **Lint Workflows and Actions**: `actionlint` (with `shellcheck`) over the workflows, and a schema check of every composite `action.yml`.
+*   **Reusable python-test**: calls this branch's `python-test.yml` against the fixture project in `tests/fixtures/python-project/`. The workflow pins its composite actions to a release tag, so this job tests the branch's workflow with the *tagged* actions.
+*   **Composite Actions (branch)**: runs this branch's `setup-python`, `lint`, `static-analysis`, `setup-and-test` and `commit-check` directly against the same fixture. Actions that nest `setup-python` still fetch it at the release tag.
+
+**Release branches:** the release commit moves every `gold-standard-phantoms/github-actions/...@vX.Y.Z` reference to the new tag, which does not exist until the release is merged. On branches named `chore/prepare-vX.Y.Z` or `release/vX.Y.Z`, the two Python jobs are therefore skipped, because neither can resolve its actions. `Self Test` accepts those two skips on release branches only. On any other branch, a skipped job fails it. The lint and schema job still runs. The release flow is:
+
+1.  Merge the release pull request (rebase merge).
+2.  Tag the merged commit on `main` (`gh release create vX.Y.Z`).
+3.  The next pull request runs both Python jobs again, now against the new tag.
+
+Between steps 1 and 2, other repositories that call `@main` cannot resolve the new tag either, so tag straight after merging.
+
 ---
 
 For any questions or issues, please refer to the documentation for individual workflows and actions or contact the Gold Standard Phantoms Platform team.

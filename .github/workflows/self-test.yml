@@ -1,0 +1,122 @@
+name: Self Test
+
+# CI for this repository itself. Other GSP repositories call these workflows
+# and actions (some at @main), so a broken merge breaks their checks at once.
+# Require the aggregated "Self Test" check on main.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: self-test-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FIXTURE: tests/fixtures/python-project
+
+jobs:
+  lint:
+    name: Lint Workflows and Actions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The image bundles shellcheck and pyflakes, so `run:` scripts are checked too.
+      - name: actionlint
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
+      # actionlint only reads workflows; validate composite action metadata separately.
+      - uses: astral-sh/setup-uv@v5
+      - name: Validate action.yml files
+        run: uvx check-jsonschema==0.38.2 --builtin-schema vendor.github-actions .github/actions/*/action.yml
+
+  # Release branches (chore/prepare-vX.Y.Z, release/vX.Y.Z) move every
+  # gold-standard-phantoms/github-actions/...@vX.Y.Z reference to a tag that is
+  # only created after the release PR merges, so the two jobs below cannot
+  # resolve their actions there and are skipped. Push runs on those branches
+  # skip too, as they report a "Self Test" check on the same commit.
+
+  # Calls this branch's python-test.yml against the fixture project. Note: the
+  # workflow's own `uses:` lines pin the composite actions to a release tag, so
+  # this exercises the branch's workflow wiring with the *tagged* actions.
+  python-test:
+    name: Reusable python-test
+    if: ${{ !startsWith(github.head_ref || github.ref_name, 'chore/prepare-v') && !startsWith(github.head_ref || github.ref_name, 'release/v') }}
+    uses: ./.github/workflows/python-test.yml
+    with:
+      python_version: "3.11"
+      working_directory: tests/fixtures/python-project
+      uv_lock_path: tests/fixtures/python-project/uv.lock
+      use_private_pypi: false
+      mypy: true
+
+  # Runs this branch's composite actions directly, which the job above cannot.
+  # Actions that nest setup-python still fetch it at the release tag.
+  branch-actions:
+    name: Composite Actions (branch)
+    # static-analysis, setup-and-test and commit-check nest setup-python@vX.Y.Z.
+    if: ${{ !startsWith(github.head_ref || github.ref_name, 'chore/prepare-v') && !startsWith(github.head_ref || github.ref_name, 'release/v') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # commit-check compares against origin/main
+
+      - uses: ./.github/actions/setup-python
+        with:
+          python_version: "3.11"
+          install_deps: "true"
+          install_dev_deps: "true"
+          working_directory: ${{ env.FIXTURE }}
+
+      - uses: ./.github/actions/lint
+        with:
+          python_target_version: "3.11"
+          uv_lock_path: ${{ env.FIXTURE }}/uv.lock
+          working_directory: ${{ env.FIXTURE }}
+
+      - uses: ./.github/actions/static-analysis
+        with:
+          python_version: "3.11"
+          uv_lock_path: ${{ env.FIXTURE }}/uv.lock
+          working_directory: ${{ env.FIXTURE }}
+
+      - uses: ./.github/actions/setup-and-test
+        with:
+          UV_INDEX: https://pypi.org/simple
+          working_directory: ${{ env.FIXTURE }}
+
+      - uses: ./.github/actions/commit-check
+
+  # The single check to require on main. A skipped job counts as passing a
+  # required check, so this runs always() and demands success from every job;
+  # the only permitted skips are the two release-branch skips above.
+  self-test:
+    name: Self Test
+    if: always()
+    needs: [lint, python-test, branch-actions]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every job to have succeeded
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          RELEASE_BRANCH: ${{ startsWith(github.head_ref || github.ref_name, 'chore/prepare-v') || startsWith(github.head_ref || github.ref_name, 'release/v') }}
+        run: |
+          allowed_skips='[]'
+          if [ "$RELEASE_BRANCH" = "true" ]; then
+            allowed_skips='["python-test", "branch-actions"]'
+          fi
+          echo "Release branch: $RELEASE_BRANCH; skips allowed for: $allowed_skips"
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          echo "$NEEDS" | jq -e --argjson allowed "$allowed_skips" '
+            to_entries | all(
+              .value.result == "success"
+              or (.value.result == "skipped" and (.key as $k | $allowed | any(. == $k)))
+            )' > /dev/null
