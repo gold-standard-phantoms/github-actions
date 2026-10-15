@@ -6,25 +6,21 @@ inputs:
     description: "Target Python version for Ruff checks (e.g. 3.9, 3.10)"
     required: false
     default: "3.11"
-    type: string
 
   ruff_version:
     description: "Version of Ruff to use (defaults to version in uv.lock if found)"
     required: false
     default: ""
-    type: string
 
   uv_lock_path:
     description: "Path to uv.lock file (defaults to ./uv.lock)"
     required: false
     default: "./uv.lock"
-    type: string
 
   working_directory:
     description: "Working directory for the Python project (useful for monorepos)"
     required: false
     default: "."
-    type: string
 
 runs:
   using: "composite"

@@ -6,31 +6,26 @@ inputs:
     description: "The URL(s) for the Python package index, including any authentication"
     required: false
     default: "https://pypi.org/simple"
-    type: string
 
   python_version:
     description: "Python version to use for static analysis"
     required: false
     default: "3.11"
-    type: string
 
   mypy_version:
     description: "Version of MyPy to use (defaults to version in uv.lock if found)"
     required: false
     default: ""
-    type: string
 
   uv_lock_path:
     description: "Path to uv.lock file (defaults to ./uv.lock)"
     required: false
     default: "./uv.lock"
-    type: string
 
   working_directory:
     description: "Working directory for the Python project (useful for monorepos)"
     required: false
     default: "."
-    type: string
 
 runs:
   using: "composite"
