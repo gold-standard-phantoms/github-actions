@@ -5,25 +5,20 @@ inputs:
   pypi_username:
     description: "PyPI username for authentication"
     required: true
-    type: string
   pypi_password:
     description: "PyPI password for authentication"
     required: true
-    type: string
   pypi_url:
     description: "PyPI repository URL"
     required: true
-    type: string
   python_version:
     description: "Python version to use for building"
     required: false
     default: "3.9"
-    type: string
   working_directory:
     description: "Working directory for the Python project (useful for monorepos)"
     required: false
     default: "."
-    type: string
 
 runs:
   using: "composite"

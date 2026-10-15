@@ -6,7 +6,6 @@ inputs:
     description: "Base branch to compare commits against"
     required: false
     default: "main"
-    type: string
 
 runs:
   using: "composite"

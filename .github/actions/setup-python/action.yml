@@ -6,7 +6,6 @@ inputs:
     description: "The URL(s) for the Python package index, including any authentication"
     required: false
     default: "https://pypi.org/simple"
-    type: string
     # Examples:
     # - Default (public PyPI only):
     #   UV_INDEX: "https://pypi.org/simple"
@@ -19,7 +18,6 @@ inputs:
     description: "Python version(s) to install. Multiple versions can be specified using newlines."
     required: false
     default: "3.11"
-    type: string
     # Examples:
     # - Single version:
     #   python_version: "3.9"
@@ -33,19 +31,16 @@ inputs:
     description: "Whether to install project dependencies"
     required: false
     default: "false"
-    type: string
 
   install_dev_deps:
     description: "Whether to install development dependencies (only applies if install_deps is true)"
     required: false
     default: "false"
-    type: string
 
   working_directory:
     description: "Working directory for the Python project (useful for monorepos)"
     required: false
     default: "."
-    type: string
 
 runs:
   using: "composite"
