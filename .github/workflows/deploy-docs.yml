@@ -151,7 +151,7 @@ jobs:
 
       # Pinned to this repository's release tag, like the other shared workflows.
       - id: publish
-        uses: gold-standard-phantoms/github-actions/.github/actions/publish-docs@v0.5.0
+        uses: gold-standard-phantoms/github-actions/.github/actions/publish-docs@v0.5.1
         with:
           key: ${{ secrets.GSP_DOCS_KEY }}
           project: ${{ inputs.project }}

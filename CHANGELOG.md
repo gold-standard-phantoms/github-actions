@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2026-11-06
+
+### ⚙️ Miscellaneous Tasks
+
+- Move third-party actions to Node 24 releases and pin the runner image
+
 ## [0.5.0] - 2026-11-06
 
 ### 🚀 Features
