@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-11-06
+
+### 🚀 Features
+
+- Add deploy-docs workflow and publish-docs action
+
+### ⚙️ Miscellaneous Tasks
+
+- Drop unsupported type keys from composite action inputs
+- Add self-test workflow with aggregated required check
+
 ## [0.4.1] - 2026-03-28
 
 ### 🐛 Bug Fixes
