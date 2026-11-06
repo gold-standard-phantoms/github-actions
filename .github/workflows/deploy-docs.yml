@@ -87,7 +87,7 @@ jobs:
     name: Build documentation
     # Never for pull requests, whatever the caller's triggers (R-CI-3).
     if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     defaults:
       run:
@@ -135,7 +135,7 @@ jobs:
   publish:
     name: Publish documentation
     needs: [build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     # One publish per project and ref at a time; a newer run waits rather than cancelling.
     concurrency:

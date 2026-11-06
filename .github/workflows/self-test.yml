@@ -22,9 +22,9 @@ env:
 jobs:
   lint:
     name: Lint Workflows and Actions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # The image bundles shellcheck and pyflakes, so `run:` scripts are checked too.
       - name: actionlint
@@ -33,7 +33,7 @@ jobs:
           args: -color
 
       # actionlint only reads workflows; validate composite action metadata separately.
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Validate action.yml files
         run: uvx check-jsonschema==0.38.2 --builtin-schema vendor.github-actions .github/actions/*/action.yml
 
@@ -63,9 +63,9 @@ jobs:
     name: Composite Actions (branch)
     # static-analysis, setup-and-test and commit-check nest setup-python@vX.Y.Z.
     if: ${{ !startsWith(github.head_ref || github.ref_name, 'chore/prepare-v') && !startsWith(github.head_ref || github.ref_name, 'release/v') }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # commit-check compares against origin/main
 
@@ -102,7 +102,7 @@ jobs:
     name: Self Test
     if: always()
     needs: [lint, python-test, branch-actions]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Require every job to have succeeded
         env:
