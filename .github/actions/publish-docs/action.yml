@@ -1,0 +1,78 @@
+name: "Publish documentation"
+description: >
+  Upload a built documentation site to the GSP documentation server (docs.gsplabs.com) with a
+  project publish key. Runs gsp_docs.py (standard library only) with the runner's python3.
+
+inputs:
+  key:
+    description: "The project's publish key (pass a secret, e.g. secrets.GSP_DOCS_KEY)"
+    required: true
+  project:
+    description: "Project slug on the documentation server, e.g. veriflux-core"
+    required: true
+  site_dir:
+    description: "The built site directory"
+    required: false
+    default: "site"
+  version:
+    description: "Version to publish. Empty: a tag vX.Y.Z publishes X.Y.Z (and moves latest), a branch publishes dev"
+    required: false
+    default: ""
+  aliases:
+    description: "Aliases to point at this version, space- or comma-separated (empty: the default above)"
+    required: false
+    default: ""
+  no_aliases:
+    description: "Move no alias at all, not even latest for a release tag"
+    required: false
+    default: "false"
+  make_default:
+    description: "Make this version the project's default"
+    required: false
+    default: "false"
+  dry_run:
+    description: "Check the archive and report what would change, without publishing"
+    required: false
+    default: "false"
+  server_url:
+    description: "Documentation server"
+    required: false
+    default: "https://docs.gsplabs.com"
+
+outputs:
+  url:
+    description: "URL of the published version"
+    value: ${{ steps.publish.outputs.url }}
+  deployment_id:
+    description: "Deployment ID on the server"
+    value: ${{ steps.publish.outputs.deployment_id }}
+  version:
+    description: "The version published"
+    value: ${{ steps.publish.outputs.version }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: publish
+      shell: bash
+      # Inputs go through the environment, never into the script text, and the key never
+      # appears on a command line (R-CI-3).
+      env:
+        GSP_DOCS_KEY: ${{ inputs.key }}
+        GSP_DOCS_URL: ${{ inputs.server_url }}
+        INPUT_PROJECT: ${{ inputs.project }}
+        INPUT_SITE_DIR: ${{ inputs.site_dir }}
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_ALIASES: ${{ inputs.aliases }}
+        INPUT_NO_ALIASES: ${{ inputs.no_aliases }}
+        INPUT_DEFAULT: ${{ inputs.make_default }}
+        INPUT_DRY_RUN: ${{ inputs.dry_run }}
+      run: |
+        set -euo pipefail
+        args=(publish "$INPUT_SITE_DIR" --project "$INPUT_PROJECT")
+        if [ -n "$INPUT_VERSION" ]; then args+=(--version "$INPUT_VERSION"); fi
+        for alias in ${INPUT_ALIASES//,/ }; do args+=(--alias "$alias"); done
+        if [ "$INPUT_NO_ALIASES" = "true" ]; then args+=(--no-aliases); fi
+        if [ "$INPUT_DEFAULT" = "true" ]; then args+=(--default); fi
+        if [ "$INPUT_DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+        python3 "$GITHUB_ACTION_PATH/gsp_docs.py" "${args[@]}"

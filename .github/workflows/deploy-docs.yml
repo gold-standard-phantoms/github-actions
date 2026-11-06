@@ -1,0 +1,162 @@
+name: Deploy documentation
+
+# Build a project's MkDocs site and publish it to the GSP documentation server
+# through its upload API (https://docs.gsplabs.com/api/v1/); readers find it at
+# http://docs.internal/<project>/<version>/. Two jobs, so that the code that builds the
+# site (the repository and its MkDocs plugins) never runs where the publish key is:
+#   build    checkout, uv, mkdocs build --strict, upload the site as an artifact
+#   publish  download the artifact and upload it with GSP_DOCS_KEY (gsp_docs.py only)
+#
+# Versions (when `version` is empty): a tag vX.Y.Z publishes X.Y.Z and moves `latest`; a branch
+# publishes `dev`. Pull requests never publish.
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: "Project slug on the documentation server, e.g. veriflux-core"
+        type: string
+        required: true
+      version:
+        description: "Version to publish (empty: from the tag, or dev for a branch)"
+        type: string
+        required: false
+        default: ""
+      aliases:
+        description: "Aliases to point at this version, space- or comma-separated (empty: latest for a release tag)"
+        type: string
+        required: false
+        default: ""
+      build_command:
+        description: "Command that builds the site"
+        type: string
+        required: false
+        default: "uv run --frozen mkdocs build --strict"
+      site_dir:
+        description: "The built site, relative to working_directory"
+        type: string
+        required: false
+        default: "site"
+      working_directory:
+        description: "Directory holding mkdocs.yml (for monorepos)"
+        type: string
+        required: false
+        default: "."
+      python_version:
+        description: "Python version for the build"
+        type: string
+        required: false
+        default: "3.12"
+      use_private_pypi:
+        description: "Install from the GSP package index as well as PyPI (needs PRIVATE_PYPI_PASSWORD)"
+        type: boolean
+        required: false
+        default: true
+      fetch_depth:
+        description: "Commits to fetch (0 = all, for git-revision-date and similar plugins)"
+        type: number
+        required: false
+        default: 0
+      dry_run:
+        description: "Check the archive and report what would change, without publishing"
+        type: boolean
+        required: false
+        default: false
+      server_url:
+        description: "Documentation server"
+        type: string
+        required: false
+        default: "https://docs.gsplabs.com"
+    secrets:
+      GSP_DOCS_KEY:
+        description: "The project's publish key (gspdocs_pub_…), from an admin of the documentation server"
+        required: true
+      PRIVATE_PYPI_PASSWORD:
+        description: "Password for the GSP package index (when use_private_pypi)"
+        required: false
+    outputs:
+      url:
+        description: "URL of the published version"
+        value: ${{ jobs.publish.outputs.url }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build documentation
+    # Never for pull requests, whatever the caller's triggers (R-CI-3).
+    if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: ${{ inputs.fetch_depth }}
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: ${{ inputs.python_version }}
+          enable-cache: "false"
+
+      - name: Check required secrets
+        if: ${{ inputs.use_private_pypi }}
+        env:
+          PRIVATE_PYPI_PASSWORD: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
+        run: |
+          if [ -z "$PRIVATE_PYPI_PASSWORD" ]; then
+            echo "::error::PRIVATE_PYPI_PASSWORD is not set; pass it, or set use_private_pypi: false."
+            exit 1
+          fi
+
+      - name: Build the site
+        env:
+          UV_INDEX: ${{ inputs.use_private_pypi && format('https://gsp-archive:{0}@pypiserver.gsplabs.com/ https://pypi.org/simple', secrets.PRIVATE_PYPI_PASSWORD) || 'https://pypi.org/simple' }}
+          BUILD_COMMAND: ${{ inputs.build_command }}
+        run: bash -c "$BUILD_COMMAND"
+
+      - name: Check the site
+        env:
+          SITE_DIR: ${{ inputs.site_dir }}
+        run: |
+          test -f "$SITE_DIR/index.html" || { echo "::error::$SITE_DIR/index.html not found after the build."; exit 1; }
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: gsp-docs-site
+          path: ${{ inputs.working_directory }}/${{ inputs.site_dir }}
+          if-no-files-found: error
+          retention-days: 3
+
+  publish:
+    name: Publish documentation
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # One publish per project and ref at a time; a newer run waits rather than cancelling.
+    concurrency:
+      group: gsp-docs-${{ inputs.project }}-${{ github.ref }}
+      cancel-in-progress: false
+    outputs:
+      url: ${{ steps.publish.outputs.url }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: gsp-docs-site
+          path: gsp-docs-site
+
+      # Pinned to this repository's release tag, like the other shared workflows.
+      - id: publish
+        uses: gold-standard-phantoms/github-actions/.github/actions/publish-docs@v0.5.0
+        with:
+          key: ${{ secrets.GSP_DOCS_KEY }}
+          project: ${{ inputs.project }}
+          site_dir: gsp-docs-site
+          version: ${{ inputs.version }}
+          aliases: ${{ inputs.aliases }}
+          dry_run: ${{ inputs.dry_run }}
+          server_url: ${{ inputs.server_url }}

@@ -177,12 +177,49 @@ The `dependency-vulnerability-check.yml` workflow performs the following steps:
 It's recommended to run this workflow on a schedule (e.g., weekly) to catch newly discovered vulnerabilities in your dependencies, even when no code changes are made.
 
 
+### `deploy-docs.yml`
+
+Builds a project's MkDocs site and publishes it to the GSP documentation server,
+`http://docs.internal/<project>/<version>/` (office network or VPN, and a Keycloak sign-in, to
+read; uploads go to `https://docs.gsplabs.com/api/v1/`). An admin
+of the server creates the project and a publish key; store the key as the repository secret
+`GSP_DOCS_KEY`. The full how-to is in the docs-server repository (`docs/howto-publish.md`).
+
+```yaml
+name: Documentation
+
+on:
+  push:
+    branches: [main]    # publishes "dev"
+    tags: ["v*"]        # v1.2.0 publishes "1.2.0" and moves "latest"
+
+jobs:
+  docs:
+    uses: gold-standard-phantoms/github-actions/.github/workflows/deploy-docs.yml@v0.5.0
+    with:
+      project: veriflux-core
+    secrets:
+      GSP_DOCS_KEY: ${{ secrets.GSP_DOCS_KEY }}
+      PRIVATE_PYPI_PASSWORD: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
+```
+
+Inputs: `project` (required), `version` and `aliases` (empty: from the tag, or `dev` for a branch),
+`build_command` (default `uv run --frozen mkdocs build --strict`), `site_dir` (`site`),
+`working_directory` (`.`), `python_version` (`3.12`), `use_private_pypi` (`true`),
+`fetch_depth` (`0`), `dry_run` (`false`), `server_url`. Output: `url`.
+
+The site is built in one job and published from a second. The build job never has the key,
+and the publish job runs only the `publish-docs` action on the downloaded files. Neither job
+runs for pull requests. Third-party actions are pinned by commit SHA.
+
+
 ## Actions
 
 This repository also contains reusable GitHub Actions that are used by the workflows and can be used independently if needed.  For detailed documentation on each action (inputs, outputs, and usage examples), please refer to the `action.yml` file within each action's directory.
 
 *   `build-and-deploy-pypi`: Builds and deploys a Python package to PyPI.
 *   `check-docs`: Validates that documentation builds successfully using `mkdocs`.
+*   `publish-docs`: Uploads a built site to the GSP documentation server with a project key (`gsp_docs.py`, standard library only; a copy of docs-server's `client/gsp_docs.py`).
 *   `commit-check`: Checks commit messages against the Conventional Commits specification.
 *   `dependency-vulnerability-check`: Scans Python dependencies for known security vulnerabilities using `pip-audit`.
 *   `lint`: Runs `ruff` linting and formatting checks.
