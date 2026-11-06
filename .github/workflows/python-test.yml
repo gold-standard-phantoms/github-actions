@@ -71,12 +71,12 @@ on:
 jobs:
   lint:
     name: Lint Checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: gold-standard-phantoms/github-actions/.github/actions/setup-python@v0.5.0
         with:
@@ -94,9 +94,9 @@ jobs:
           working_directory: ${{ inputs.working_directory }}
   commit_check:
     name: Check Commits
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -106,12 +106,12 @@ jobs:
     name: Static Analysis
     needs: [commit_check]
     if: ${{ inputs.mypy }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: gold-standard-phantoms/github-actions/.github/actions/static-analysis@v0.5.0
         with:
@@ -124,7 +124,7 @@ jobs:
   test:
     name: Run Tests
     needs: [lint, commit_check]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}
@@ -132,7 +132,7 @@ jobs:
       needs.lint.result == 'success' && 
       needs.commit_check.result == 'success'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           lfs: ${{ inputs.lfs }}
 
@@ -149,13 +149,13 @@ jobs:
 
       - name: Set up DVC (specific version)
         if: ${{ inputs.use_dvc && inputs.dvc_version != '' }}
-        uses: iterative/setup-dvc@v1
+        uses: iterative/setup-dvc@6c05772f52d19792ed73aedb6c2bf65ec92adebb # v3.0.0
         with:
           version: ${{ inputs.dvc_version }}
 
       - name: Set up DVC (latest version)
         if: ${{ inputs.use_dvc && inputs.dvc_version == '' }}
-        uses: iterative/setup-dvc@v1
+        uses: iterative/setup-dvc@6c05772f52d19792ed73aedb6c2bf65ec92adebb # v3.0.0
         with:
           version: "latest"
 
@@ -175,9 +175,9 @@ jobs:
   check-docs:
     name: Check Documentation
     needs: [test]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: gold-standard-phantoms/github-actions/.github/actions/check-docs@v0.5.0
         with:
           python_version: ${{ inputs.python_version }}
