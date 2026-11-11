@@ -195,7 +195,7 @@ on:
 
 jobs:
   docs:
-    uses: gold-standard-phantoms/github-actions/.github/workflows/deploy-docs.yml@v0.5.0
+    uses: gold-standard-phantoms/github-actions/.github/workflows/deploy-docs.yml@v0.5.1
     with:
       project: veriflux-core
     secrets:
