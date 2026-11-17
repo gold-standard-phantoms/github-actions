@@ -263,9 +263,11 @@ jobs:
 
 The calling job must grant `pages: write` and `id-token: write` as above; a reusable workflow
 cannot give itself more than its caller allows. In the repository, set *Settings → Pages →
-Source* to **GitHub Actions**. The `github-pages` environment that GitHub creates accepts only
-the default branch; to deploy from tags, add a `v*` tag rule under *Settings → Environments →
-github-pages*.
+Source* to **GitHub Actions**. The deploy job runs in the repository's `github-pages`
+environment, and that environment's branch rules decide which refs may deploy (*Settings →
+Environments → github-pages → Deployment branches and tags*). If the ref isn't allowed, the job
+fails with *Branch "main" is not allowed to deploy to github-pages due to environment protection
+rules*: add the branch, or a `v*` tag rule to deploy from tags, then re-run the failed job.
 
 Inputs: `site_url` (empty: `https://<owner>.github.io/<repository>/`), `build_command`
 (default `uv run --frozen mkdocs build --strict`, run with `SITE_URL` set), `site_dir` (`site`),
@@ -274,8 +276,10 @@ Inputs: `site_url` (empty: `https://<owner>.github.io/<repository>/`), `build_co
 
 As with `deploy-docs.yml`, the build job (the repository's code and its MkDocs plugins) never
 holds the Pages token; the deploy job runs only `actions/deploy-pages`. Neither job runs for pull
-requests. A repository moving from `mkdocs gh-deploy` can delete its `gh-pages` branch once the
-first deployment has worked, and drop `contents: write` from its old workflow.
+requests. A repository moving from `mkdocs gh-deploy` replaces its old workflow, which ran the
+build with `contents: write`. Its `github-pages` environment, created for the old setup, may still
+allow only the `gh-pages` branch: qmri's did, so add `main` before the first run. Delete
+`gh-pages` once the first deployment has worked.
 
 
 ## Actions
