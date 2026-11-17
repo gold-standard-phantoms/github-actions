@@ -212,6 +212,71 @@ The site is built in one job and published from a second. The build job never ha
 and the publish job runs only the `publish-docs` action on the downloaded files. Neither job
 runs for pull requests. Third-party actions are pinned by commit SHA.
 
+### `deploy-pages.yml`
+
+Builds a project's MkDocs site and deploys it to the repository's GitHub Pages site, for
+projects that publish there as well as to the documentation server. A GitHub Pages site is
+public, even from a private repository, unless the organisation has private Pages (Enterprise
+Cloud).
+
+The two hosts need different `site_url`s (canonical links, `sitemap.xml` and the 404 page are
+built from it), so each workflow builds its own copy. Make `mkdocs.yml` read it from the
+environment, with the documentation server as the default:
+
+```yaml
+site_url: !ENV [SITE_URL, "http://docs.internal/<project>/"]
+```
+
+`deploy-docs.yml` leaves `SITE_URL` unset and gets the default; `deploy-pages.yml` sets it to the
+Pages address, and fails if the built `sitemap.xml` shows the site was built for another URL. If
+the repository uses pre-commit's `check-yaml` hook, give it `args: [--unsafe]` for the `!ENV` tag.
+
+```yaml
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+jobs:
+  docs:
+    uses: gold-standard-phantoms/github-actions/.github/workflows/deploy-docs.yml@v0.6.0
+    with:
+      project: qmri
+    secrets:
+      GSP_DOCS_KEY: ${{ secrets.GSP_DOCS_KEY }}
+      PRIVATE_PYPI_PASSWORD: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
+
+  pages:
+    # Pages holds one version: deploy main (or use startsWith(github.ref, 'refs/tags/v')
+    # to deploy releases only).
+    if: github.ref == 'refs/heads/main'
+    uses: gold-standard-phantoms/github-actions/.github/workflows/deploy-pages.yml@v0.6.0
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    secrets:
+      PRIVATE_PYPI_PASSWORD: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
+```
+
+The calling job must grant `pages: write` and `id-token: write` as above; a reusable workflow
+cannot give itself more than its caller allows. In the repository, set *Settings → Pages →
+Source* to **GitHub Actions**. The `github-pages` environment that GitHub creates accepts only
+the default branch; to deploy from tags, add a `v*` tag rule under *Settings → Environments →
+github-pages*.
+
+Inputs: `site_url` (empty: `https://<owner>.github.io/<repository>/`), `build_command`
+(default `uv run --frozen mkdocs build --strict`, run with `SITE_URL` set), `site_dir` (`site`),
+`working_directory` (`.`), `python_version` (`3.12`), `use_private_pypi` (`true`),
+`fetch_depth` (`0`). Output: `url`.
+
+As with `deploy-docs.yml`, the build job (the repository's code and its MkDocs plugins) never
+holds the Pages token; the deploy job runs only `actions/deploy-pages`. Neither job runs for pull
+requests. A repository moving from `mkdocs gh-deploy` can delete its `gh-pages` branch once the
+first deployment has worked, and drop `contents: write` from its old workflow.
+
 
 ## Actions
 
