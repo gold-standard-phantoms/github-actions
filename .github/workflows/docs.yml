@@ -1,0 +1,31 @@
+name: Documentation
+
+# Publishes this repository's documentation to the GSP documentation server,
+# http://docs.internal/github-actions/, where agents also reach it through the server's MCP tools.
+# main publishes "dev"; a tag vX.Y.Z publishes "X.Y.Z" and moves "latest".
+#
+# It calls this commit's own deploy-docs.yml (./), so the workflow publishes itself. The
+# release-prep commit on main is skipped: its deploy-docs.yml already refers to the publish-docs
+# action at the new tag, which doesn't exist until the release is created. The tag push that
+# follows publishes that version.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    if: >-
+      github.ref_type == 'tag' ||
+      !startsWith(github.event.head_commit.message, 'chore(release): prepare for v')
+    uses: ./.github/workflows/deploy-docs.yml
+    with:
+      project: github-actions
+      use_private_pypi: false
+    secrets:
+      GSP_DOCS_KEY: ${{ secrets.GSP_DOCS_KEY }}

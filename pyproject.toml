@@ -1,0 +1,16 @@
+# Only for building this repository's documentation site (mkdocs.yml); not a Python package.
+[project]
+name = "gsp-github-actions-docs"
+version = "0"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "pyyaml>=6",
+]
+
+[tool.uv]
+package = false

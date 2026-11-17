@@ -2,6 +2,8 @@
 
 This repository contains reusable GitHub Actions and Workflows designed to be shared across multiple repositories within the Gold Standard Phantoms organisation.
 
+The documentation site, `http://docs.internal/github-actions/` (office network or VPN, and a GSP sign-in), has this README and a reference page for every workflow and action, generated from their YAML. Agents can search it through the documentation server's MCP tools.
+
 ## Workflows
 
 ### `deploy-to-gsp-pypi.yml`
@@ -302,7 +304,7 @@ This repository also contains reusable GitHub Actions that are used by the workf
 uses: gold-standard-phantoms/github-actions/.github/workflows/deploy-to-gsp-pypi.yml@v1.0.0 # Using a version tag
 ```
 
-We recommend using tags in your workflow `uses:` statements to ensure stability and reproducibility. Check the [releases](../../releases) for the latest version.
+We recommend using tags in your workflow `uses:` statements to ensure stability and reproducibility. Check the [releases](https://github.com/gold-standard-phantoms/github-actions/releases) for the latest version.
 
 ## Self-test (CI for this repository)
 

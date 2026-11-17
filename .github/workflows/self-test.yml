@@ -37,6 +37,22 @@ jobs:
       - name: Validate action.yml files
         run: uvx check-jsonschema==0.38.2 --builtin-schema vendor.github-actions .github/actions/*/action.yml
 
+  # The documentation site (mkdocs.yml, reference pages generated from the YAML by
+  # hooks/reference.py). docs.yml publishes it from main and tags; this catches a broken build
+  # in pull requests first.
+  docs:
+    name: Documentation Build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the reference pages name the latest release tag
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.12"
+      - name: Build the site
+        run: uv run --frozen mkdocs build --strict
+
   # Release branches (chore/prepare-vX.Y.Z, release/vX.Y.Z) move every
   # gold-standard-phantoms/github-actions/...@vX.Y.Z reference to a tag that is
   # only created after the release PR merges, so the two jobs below cannot
@@ -101,7 +117,7 @@ jobs:
   self-test:
     name: Self Test
     if: always()
-    needs: [lint, python-test, branch-actions]
+    needs: [lint, docs, python-test, branch-actions]
     runs-on: ubuntu-24.04
     steps:
       - name: Require every job to have succeeded

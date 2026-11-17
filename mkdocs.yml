@@ -1,0 +1,58 @@
+site_name: GSP GitHub Actions
+site_description: Reusable GitHub Actions workflows and composite actions shared across GSP repositories
+site_url: http://docs.internal/github-actions/
+repo_url: https://github.com/gold-standard-phantoms/github-actions
+repo_name: gold-standard-phantoms/github-actions
+copyright: Gold Standard Phantoms
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle: { icon: material/brightness-7, name: Switch to dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle: { icon: material/brightness-4, name: Switch to light mode }
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+extra_css:
+  - assets/gsp.css
+
+# Reference pages for every reusable workflow and composite action are generated from the YAML
+# at build time (hooks/reference.py). No `nav:`, so they are listed automatically.
+hooks:
+  - hooks/reference.py
+
+# The search plugin's index is what the documentation server's MCP tools search; keep it.
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+validation:
+  links:
+    not_found: warn
+    anchors: warn
+    unrecognized_links: warn
+
+extra:
+  version:
+    provider: mike      # versions.json comes from the documentation server
+    default: latest
