@@ -1,0 +1,158 @@
+name: Deploy documentation to GitHub Pages
+
+# Build a project's MkDocs site and deploy it to the repository's GitHub Pages site, for
+# projects that publish to Pages as well as to the GSP documentation server (deploy-docs.yml).
+# Two jobs, so that the code that builds the site (the repository and its MkDocs plugins) never
+# runs with the Pages token:
+#   build   checkout, uv, mkdocs build --strict with SITE_URL set, upload the Pages artifact
+#   deploy  actions/deploy-pages only
+#
+# The site is built separately from deploy-docs.yml's because site_url differs between the two
+# hosts (canonical links, sitemap.xml and the 404 page depend on it). mkdocs.yml must read it from
+# the environment:  site_url: !ENV [SITE_URL, "http://docs.internal/<project>/"]
+#
+# GitHub Pages holds one version of the site; the caller chooses which ref deploys (see the
+# README). Pull requests never deploy. The calling job must grant pages: write and
+# id-token: write, which a reusable workflow cannot give itself.
+
+on:
+  workflow_call:
+    inputs:
+      site_url:
+        description: "URL the site is served from (empty: https://<owner>.github.io/<repository>/)"
+        type: string
+        required: false
+        default: ""
+      build_command:
+        description: "Command that builds the site; it gets SITE_URL in the environment"
+        type: string
+        required: false
+        default: "uv run --frozen mkdocs build --strict"
+      site_dir:
+        description: "The built site, relative to working_directory"
+        type: string
+        required: false
+        default: "site"
+      working_directory:
+        description: "Directory holding mkdocs.yml (for monorepos)"
+        type: string
+        required: false
+        default: "."
+      python_version:
+        description: "Python version for the build"
+        type: string
+        required: false
+        default: "3.12"
+      use_private_pypi:
+        description: "Install from the GSP package index as well as PyPI (needs PRIVATE_PYPI_PASSWORD)"
+        type: boolean
+        required: false
+        default: true
+      fetch_depth:
+        description: "Commits to fetch (0 = all, for git-revision-date and similar plugins)"
+        type: number
+        required: false
+        default: 0
+    secrets:
+      PRIVATE_PYPI_PASSWORD:
+        description: "Password for the GSP package index (when use_private_pypi)"
+        required: false
+    outputs:
+      url:
+        description: "URL of the deployed site"
+        value: ${{ jobs.deploy.outputs.url }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build documentation for GitHub Pages
+    # Never for pull requests, whatever the caller's triggers.
+    if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: ${{ inputs.fetch_depth }}
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: ${{ inputs.python_version }}
+          enable-cache: "false"
+
+      - name: Check required secrets
+        if: ${{ inputs.use_private_pypi }}
+        env:
+          PRIVATE_PYPI_PASSWORD: ${{ secrets.PRIVATE_PYPI_PASSWORD }}
+        run: |
+          if [ -z "$PRIVATE_PYPI_PASSWORD" ]; then
+            echo "::error::PRIVATE_PYPI_PASSWORD is not set; pass it, or set use_private_pypi: false."
+            exit 1
+          fi
+
+      - name: Work out the site URL
+        id: site-url
+        env:
+          SITE_URL_INPUT: ${{ inputs.site_url }}
+        run: |
+          owner="${GITHUB_REPOSITORY%%/*}"
+          url="${SITE_URL_INPUT:-https://${owner,,}.github.io/${GITHUB_REPOSITORY#*/}/}"
+          case "$url" in */) ;; *) url="$url/" ;; esac
+          echo "Site URL: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Build the site
+        env:
+          UV_INDEX: ${{ inputs.use_private_pypi && format('https://gsp-archive:{0}@pypiserver.gsplabs.com/ https://pypi.org/simple', secrets.PRIVATE_PYPI_PASSWORD) || 'https://pypi.org/simple' }}
+          BUILD_COMMAND: ${{ inputs.build_command }}
+          SITE_URL: ${{ steps.site-url.outputs.url }}
+        run: bash -c "$BUILD_COMMAND"
+
+      # A mkdocs.yml with a fixed site_url builds without error but serves the Pages site with
+      # the documentation server's canonical links and a 404 page whose assets do not load.
+      - name: Check the site
+        env:
+          SITE_DIR: ${{ inputs.site_dir }}
+          SITE_URL: ${{ steps.site-url.outputs.url }}
+        run: |
+          test -f "$SITE_DIR/index.html" || { echo "::error::$SITE_DIR/index.html not found after the build."; exit 1; }
+          if [ -f "$SITE_DIR/sitemap.xml" ]; then
+            if grep -q '<loc>' "$SITE_DIR/sitemap.xml" && ! grep -qF "<loc>$SITE_URL" "$SITE_DIR/sitemap.xml"; then
+              echo "::error::The site was not built for $SITE_URL. In mkdocs.yml, set site_url: !ENV [SITE_URL, \"<documentation server URL>\"]."
+              exit 1
+            fi
+          else
+            echo "::warning::No sitemap.xml in $SITE_DIR, so the site URL could not be checked."
+          fi
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ inputs.working_directory }}/${{ inputs.site_dir }}
+          retention-days: 3
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: [build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    # One deployment per repository at a time; a newer run waits rather than cancelling.
+    concurrency:
+      group: gsp-pages-${{ github.repository }}
+      cancel-in-progress: false
+    outputs:
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
