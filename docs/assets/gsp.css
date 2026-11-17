@@ -1,0 +1,15 @@
+/* GSP palette (gsp-branding v1.1.0): deep gold header, gold accents. */
+:root, [data-md-color-scheme="default"] {
+  --md-primary-fg-color: #8b6536;
+  --md-primary-fg-color--light: #bf935b;
+  --md-primary-fg-color--dark: #6f5029;
+  --md-accent-fg-color: #9a592b;
+  --md-typeset-a-color: #8b6536;
+}
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #6f5029;
+  --md-primary-fg-color--light: #bf935b;
+  --md-primary-fg-color--dark: #5a4122;
+  --md-accent-fg-color: #e0a070;
+  --md-typeset-a-color: #d2ad7c;
+}
