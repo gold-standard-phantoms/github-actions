@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-11-17
+
+### 🚀 Features
+
+- Add deploy-pages workflow for GitHub Pages documentation
+
+### 📚 Documentation
+
+- Show deploy-docs.yml at v0.5.1 in the README example
+
 ## [0.5.1] - 2026-11-06
 
 ### ⚙️ Miscellaneous Tasks
